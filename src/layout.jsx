@@ -14,11 +14,6 @@ export function Layout() {
             <li>
               <Link to="/">Home</Link>
             </li>
-            <li>
-              <Link to="/subscriptions-wslink">
-                Subscriptions (GraphQLWsLink)
-              </Link>
-            </li>
           </ul>
         </nav>
       </header>

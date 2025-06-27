@@ -12,15 +12,44 @@ import {
 } from "@apollo/client";
 
 import { link } from "./link.js";
-import { Subscriptions } from "./subscriptions.jsx";
 import { Layout } from "./layout.jsx";
 import "./index.css";
+
+/** @type {import('@apollo/client').TypePolicies} */
+const typePolicies = {
+  Address: {
+    fields: {
+      name: {
+        read: (name) => name ? `${name}`.toUpperCase() : name,
+      },
+    }
+  },
+  All__: {
+    fields: {
+      // if fields has 'name', 'read' will be overriden by 'Address.fields.name.read'
+      name: {
+        // for test
+        read: (name) => name,
+      },
+    },
+  },
+};
+/** @type {import('@apollo/client').PossibleTypesMap} */
+const possibleTypes = {
+  // refs. https://github.com/apollographql/apollo-client/issues/11808
+  All__: ['.*'],
+};
 
 const ALL_PEOPLE = gql`
   query AllPeople {
     people {
       id
       name
+      address {
+        id
+        name
+        location
+      }
     }
   }
 `;
@@ -76,18 +105,24 @@ function App() {
       {loading ? (
         <p>Loading…</p>
       ) : (
-        <ul>
-          {data?.people.map((person) => (
-            <li key={person.id}>{person.name}</li>
-          ))}
-        </ul>
+        <>
+          <p>'person.name' should be as-is name, but is actually capitalized name which is applied by typePolicies.Address.fields.name.read.</p>
+          <ul>
+            {data?.people.map((person) => (
+              <li key={person.id}>{person.name} (address name = {person.address?.name})</li>
+            ))}
+          </ul>
+        </>
       )}
     </main>
   );
 }
 
 const client = new ApolloClient({
-  cache: new InMemoryCache(),
+  cache: new InMemoryCache({
+    typePolicies,
+    possibleTypes,
+  }),
   link,
 });
 
@@ -100,7 +135,6 @@ root.render(
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<App />} />
-          <Route path="subscriptions-wslink" element={<Subscriptions />} />
         </Route>
       </Routes>
     </Router>
